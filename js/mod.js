@@ -1,27 +1,46 @@
 let modInfo = {
-	name: "The ??? Tree",
-	author: "nobody",
-	pointsName: "points",
-	modFiles: ["layers.js", "tree.js"],
+	name: "The Color Tree",
+	author: "HankG",
+	pointsName: "Points",
+	modFiles: ["layers/blue.js","layers/green.js","layers/red.js",
+		"layers/devTool.js","tree.js"],
 
 	discordName: "",
 	discordLink: "",
-	initialStartPoints: new Decimal (10), // Used for hard resets and new players
+	initialStartPoints: new Decimal(0), // Used for hard resets and new players
 	offlineLimit: 1,  // In hours
 }
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.0",
-	name: "Literally nothing",
+	num: "0.1",
+	name: "RGB",
 }
 
-let changelog = `<h1>Changelog:</h1><br>
-	<h3>v0.0</h3><br>
-		- Added things.<br>
-		- Added stuff.`
+let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1 - 2026/6/25 - 2026/7/10</h3><br>
+		<b>RGB</b><br>
+		2nd game after a while!<br>
+		This game is mostly auto so just treat it as watching movie!<br>
+		(I hope it won't be too boring for u at least-)<br><br>
+		<div style='color:rgb(44, 186, 241)'>Current Endgame: Reach 1e22 points</div><br>
+	`
 
-let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
+let winText = `Congratulations! You have endured the mental challenge the game had thrown at you and become the immortal!<br>(or perhaps you're a masochist?)`
+
+// Display extra things at the top of the page
+var displayThings = [
+	function() {
+	}
+]
+
+// Determines when the game "ends"
+function isEndgame() {
+	//return player.points.gte(new Decimal("ee280000000"))
+	//return (hasAchievement("ach",95))
+}
+
+//let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
 // If you add new functions anywhere inside of a layer, and those functions have an effect when called, add them here.
 // (The ones here are examples, all official functions are already taken care of)
@@ -42,11 +61,158 @@ function getPointGen() {
 		return new Decimal(0)
 
 	let gain = new Decimal(1)
+	if(hasUpgrade("b",11)) gain = gain.add(1)
+	if(hasUpgrade("b",12)) gain = gain.add(1)
+	if(hasUpgrade("b",13)) gain = gain.add(1)
+	if(hasUpgrade("b",14)) gain = gain.add(2)
+	if(hasUpgrade("b",21)) gain = gain.add(2)
+	if(hasUpgrade("b",22)) gain = gain.add(2)
+	if(hasUpgrade("b",23)) gain = gain.add(1)
+	if(hasUpgrade("b",24)) gain = gain.add(1)
+	if(hasUpgrade("b",25)) gain = gain.mul(2)
+	if(hasUpgrade("g",12)) gain = gain.add(3)
+	if(hasUpgrade("g",13)) gain = gain.add(3)
+	if(hasUpgrade("g",14)) gain = gain.add(upgradeEffect("g",14))
+	if(hasUpgrade("g",24)) gain = gain.add(10)
+	if(hasUpgrade("g",24)) gain = gain.add(20)
+	if(hasUpgrade("g",32)) gain = gain.add(upgradeEffect("g",32)[0])
+	if(hasUpgrade("g",33)) gain = gain.add(100)
+	if(hasUpgrade("g",42)) gain = gain.add(tmp.g.glGeneration.mul(hasMilestone("r",8)?0:hasUpgrade("g",45)?0.2:0.1))
+	if(hasUpgrade("g",43)) gain = gain.add(1000)
+	if(hasUpgrade("g",44)) gain = gain.add(player.b.points.mul(tmp.r.gEnergyEff1))
+	if(hasUpgrade("b",45)) gain = gain.add(1e5)
+	if(hasUpgrade("g",51)) gain = gain.add(1e5)
+	if(hasUpgrade("g",55)) gain = gain.add(1e6)
+	if(hasMilestone("r",0)) gain = gain.add(3000)
+	if(hasMilestone("r",2)) gain = gain.add(5000)
+	if(hasMilestone("r",3)) gain = gain.add(tmp.r.redM4eff)
+	if(!hasUpgrade("r",12)) gain = gain.add(buyableEffect("b",13))
+	gain = gain.mul(tmp.r.bEnergyEff1)
+	if(hasUpgrade("b",51)) gain = gain.add(1e8)
+	if(hasUpgrade("b",52)) gain = gain.add(1e8)
+	if(hasUpgrade("b",53)) gain = gain.add(1e8)
+	if(hasUpgrade("b",54)) gain = gain.add(1e8)
+	if(hasUpgrade("b",55)) gain = gain.add(1e9)
+	if(getBuyableAmount("r",11).gte(30)) gain = gain.add(tmp.r.bEnergyEff4)
 	return gain
+}
+
+// Custom function that will be used here
+function totalCostFormula(base, constant, x, factor, offset) { // the original formula for clarity
+    return base.mul(factor).mul(factor.pow(x.sub(offset)).sub(1)).div(factor.sub(1)).add(constant)
+}
+
+function totalCostFormulaLARGE(base, x, factor, offset, accel) { // this is used for the larger scaling
+	let totalFactor = new Decimal(1)
+	for (let i = 0; i < x.sub(offset); i++) {
+		factor = factor.mul(accel)
+		totalFactor = totalFactor.mul(factor)
+	}
+	return base.mul(totalFactor)
+}
+
+function totalCost(buyableStatus) { // function that puts the variables into a single object
+	let base = buyableStatus.base
+	let constant = buyableStatus.constant
+	let x = buyableStatus.buyCount
+	let factor = buyableStatus.factor
+	let offset = buyableStatus.offset
+	let accel = buyableStatus.accel
+	let sumCost = totalCostFormula(base, constant, x, factor, offset)
+	if(buyableStatus.large) sumCost = totalCostFormulaLARGE(base, x, factor, offset, accel)
+	return sumCost
+}
+
+function totalBuysFormula(points, base, constant, factor, offset) { // the original formula for clarity
+    let finalBuys = Decimal.log10((points.sub(constant)).mul(factor.sub(1)).div(base).div(factor).add(1)).div(Decimal.log10(factor)).add(offset)
+	if (finalBuys.lt(0)) return finalBuys.ceil()
+	return finalBuys.floor()
+}
+
+function totalBuysFormulaLARGE(points, base, factor, offset, accel) { // this is used for the larger scaling
+    let finalBuys = offset
+	let totalFactor = new Decimal(1)
+	while(points.div(base).div(totalFactor).gte(1)) {
+		factor = factor.mul(accel)
+		totalFactor = totalFactor.mul(factor)
+		finalBuys = finalBuys.add(1)
+	}
+	return finalBuys.sub(1)
+}
+
+function totalBuys(buyableStatus) { // function that puts the variables into a single object
+	let points = buyableStatus.points.add(buyableStatus.boughtCost)
+	let base = buyableStatus.base
+	let constant = buyableStatus.constant
+	let factor = buyableStatus.factor
+	let offset = buyableStatus.offset
+	let accel = buyableStatus.accel
+    if(buyableStatus.large) buyableStatus.buyCount = totalBuysFormulaLARGE(points, base, factor, offset, accel)
+    else buyableStatus.buyCount = totalBuysFormula(points, base, constant, factor, offset)
+	return
+}
+
+function totalBuysWithScaling(buyableStatus) { // 3rd layer of function that accounts for scaling, returns object for updating
+	let injectedBuyCount = buyableStatus.buyCount
+	if (!buyableStatus.injected) totalBuys(buyableStatus) 
+	for (let scaleIndex = new Decimal(0); scaleIndex.lt(buyableStatus.scaleStart.length); scaleIndex = scaleIndex.add(1)) {
+		if (buyableStatus.buyCount.gte(buyableStatus.scaleStart[scaleIndex])) {
+			buyableStatus.buyCount = buyableStatus.scaleStart[scaleIndex].sub(1)
+			buyableStatus.constant = totalCost(buyableStatus)
+			buyableStatus.base = buyableStatus.base.mul(buyableStatus.factor.pow(buyableStatus.scaleStart[scaleIndex].sub(scaleIndex.lt(1)?1:buyableStatus.scaleStart[scaleIndex.sub(1)])))
+			buyableStatus.factor = buyableStatus.scaledFactor[scaleIndex]
+			buyableStatus.offset = buyableStatus.scaleStart[scaleIndex].sub(1)
+			buyableStatus.large = buyableStatus.largeScale[scaleIndex]
+			if(!buyableStatus.injected) totalBuys(buyableStatus)
+			else buyableStatus.buyCount = injectedBuyCount
+		}
+    }
+	return buyableStatus
+}
+
+function colorPalette(type) {
+	switch(type) {
+		case "c": // Crystal Shards
+			return ["rgb(209, 31, 31)","rgb(191, 143, 143)"]
+	}
+}
+
+function getCurrency(type) {
+	switch(type) {
+		case "c": // Crystal Shards
+			return
+	}
+}
+
+function upgradeButtonStyle(type,layer,id,multi=false) { // multi: for upgrades with multiple currencies required
+	let colors = colorPalette(type)
+	let currency = getCurrency(type)
+	let color = colors[1]
+	if(hasUpgrade(layer,id)) color = colors[0]
+	if(currency.gte(tmp[layer].upgrades[id].cost)&&!hasUpgrade(layer,id)&&!multi) {
+		color = "linear-gradient("+colors[1]+","+colors[0]+")"
+	}
+	if(tmp[layer].upgrades[id].canAfford&&!hasUpgrade(layer,id)&&multi) {
+		color = "linear-gradient("+colors[1]+","+colors[0]+")"
+	}
+	return color
+}
+
+function getUpgCount(layer, start, end) {
+	let upgs = 0
+	for(let i = start; i <= end; i++) {
+		if(hasUpgrade(layer,i)) upgs++
+	}
+	return upgs
+}
+
+function hideUpgs(layer,id) {
+    return hasUpgrade(layer,id)&&player[layer].hideUpgrades
 }
 
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
 function addedPlayerData() { return {
+
 }}
 
 // Display extra things at the top of the page
@@ -54,9 +220,6 @@ var displayThings = [
 ]
 
 // Determines when the game "ends"
-function isEndgame() {
-	return player.points.gte(new Decimal("e280000000"))
-}
 
 
 
