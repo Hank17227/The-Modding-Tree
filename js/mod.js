@@ -13,11 +13,16 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.1",
-	name: "RGB",
+	num: "0.1.1",
+	name: "RGB-Balanced",
 }
 
 let changelog = `<h1>Changelog:</h1><br><br>
+	<h3>v0.1.1 - 2026/7/10 - 2026/7/11</h3><br>
+		<b>RGB-Balanced</b><br>
+		Made the overall pace much faster<br>
+		Fixed a bug where GL would be negative at start<br><br>
+		<div style='color:rgb(44, 186, 241)'>Current Endgame: Reach 1e25 points</div><br>
 	<h3>v0.1 - 2026/6/25 - 2026/7/10</h3><br>
 		<b>RGB</b><br>
 		2nd game after a while!<br>
@@ -26,7 +31,7 @@ let changelog = `<h1>Changelog:</h1><br><br>
 		<div style='color:rgb(44, 186, 241)'>Current Endgame: Reach 1e22 points</div><br>
 	`
 
-let winText = `Congratulations! You have endured the mental challenge the game had thrown at you and become the immortal!<br>(or perhaps you're a masochist?)`
+let winText = `Congratulations! You have beaten the game for now... and then?`
 
 // Display extra things at the top of the page
 var displayThings = [
@@ -36,8 +41,8 @@ var displayThings = [
 
 // Determines when the game "ends"
 function isEndgame() {
-	//return player.points.gte(new Decimal("ee280000000"))
-	//return (hasAchievement("ach",95))
+	return player.points.gte(1e25)
+	
 }
 
 //let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
@@ -75,25 +80,28 @@ function getPointGen() {
 	if(hasUpgrade("g",14)) gain = gain.add(upgradeEffect("g",14))
 	if(hasUpgrade("g",24)) gain = gain.add(10)
 	if(hasUpgrade("g",24)) gain = gain.add(20)
+	if(hasUpgrade("b",33)) gain = gain.add(20)
+	if(hasUpgrade("b",34)) gain = gain.mul(2)
 	if(hasUpgrade("g",32)) gain = gain.add(upgradeEffect("g",32)[0])
-	if(hasUpgrade("g",33)) gain = gain.add(100)
-	if(hasUpgrade("g",42)) gain = gain.add(tmp.g.glGeneration.mul(hasMilestone("r",8)?0:hasUpgrade("g",45)?0.2:0.1))
-	if(hasUpgrade("g",43)) gain = gain.add(1000)
+	if(hasUpgrade("g",33)) gain = gain.add(200)
+	if(hasUpgrade("g",42)&&!hasUpgrade("r",13)) gain = gain.mul(2)
+	if(hasUpgrade("g",43)) gain = gain.add(10000)
+	if(hasUpgrade("g",45)&&!hasUpgrade("r",14)) gain = gain.mul(2)
 	if(hasUpgrade("g",44)) gain = gain.add(player.b.points.mul(tmp.r.gEnergyEff1))
-	if(hasUpgrade("b",45)) gain = gain.add(1e5)
-	if(hasUpgrade("g",51)) gain = gain.add(1e5)
-	if(hasUpgrade("g",55)) gain = gain.add(1e6)
-	if(hasMilestone("r",0)) gain = gain.add(3000)
+	if(hasUpgrade("b",45)) gain = gain.add(5e5)
+	if(hasUpgrade("g",51)) gain = gain.add(1e6)
+	if(hasUpgrade("g",55)) gain = gain.add(6.25e6)
+	if(hasMilestone("r",0)) gain = gain.add(50000)
 	if(hasMilestone("r",2)) gain = gain.add(5000)
 	if(hasMilestone("r",3)) gain = gain.add(tmp.r.redM4eff)
 	if(!hasUpgrade("r",12)) gain = gain.add(buyableEffect("b",13))
 	gain = gain.mul(tmp.r.bEnergyEff1)
-	if(hasUpgrade("b",51)) gain = gain.add(1e8)
-	if(hasUpgrade("b",52)) gain = gain.add(1e8)
-	if(hasUpgrade("b",53)) gain = gain.add(1e8)
-	if(hasUpgrade("b",54)) gain = gain.add(1e8)
-	if(hasUpgrade("b",55)) gain = gain.add(1e9)
-	if(getBuyableAmount("r",11).gte(30)) gain = gain.add(tmp.r.bEnergyEff4)
+	if(hasUpgrade("b",51)) gain = gain.add(1e10)
+	if(hasUpgrade("b",52)) gain = gain.add(1e10)
+	if(hasUpgrade("b",53)) gain = gain.add(1e10)
+	if(hasUpgrade("b",54)) gain = gain.add(1e10)
+	if(hasUpgrade("b",55)) gain = gain.add(1e11)
+	if(player.r.bEnergy.gte(45)) gain = gain.add(tmp.r.bEnergyEff4)
 	return gain
 }
 

@@ -37,6 +37,8 @@ addLayer("b", {
         let mult = new Decimal(1)
         if(hasUpgrade("b",15)) mult = mult.add(1)
         if(hasUpgrade("g",11)) mult = mult.add(1)
+        if(hasUpgrade("g",13)) mult = mult.add(3)
+        if(hasUpgrade("g",15)) mult = mult.add(4)
         if(hasUpgrade("g",21)) mult = mult.add(upgradeEffect("g",21))
         if(hasUpgrade("b",35)) mult = mult.add(upgradeEffect("b",35)[0])
         mult = mult.add(buyableEffect(this.layer,11))
@@ -148,8 +150,8 @@ addLayer("b", {
                 return consume
             },
             baseEffect() {
-                let base = new Decimal(2)
-                if(hasUpgrade("b",33)) base = base.add(0.1)
+                let base = new Decimal(5)
+                if(hasUpgrade("b",33)) base = base.add(1)
                 return base
             },
             effect(x) {
@@ -158,7 +160,7 @@ addLayer("b", {
                 if(x.gt(0)) eff = base.mul(x)
                 return eff
             },
-            canAfford() {return player[this.layer].points.gte(this.cost())},
+            canAfford() {return player[this.layer].points.gte(this.cost())&&hasUpgrade("g",15)},
             buy() {
                 if(!this.canAfford()) return
                 cost = tmp[this.layer].buyables[this.id].cost
@@ -204,7 +206,7 @@ addLayer("b", {
                 if(x.gt(0)) eff = base.mul(x)
                 return eff
             },
-            canAfford() {return player[this.layer].points.gte(this.cost())},
+            canAfford() {return player[this.layer].points.gte(this.cost())&&getBuyableAmount(this.layer,11).gte(2)},
             buy() {
                 if(!this.canAfford()) return
                 cost = tmp[this.layer].buyables[this.id].cost
@@ -247,7 +249,7 @@ addLayer("b", {
                 if(hasMilestone("r",17)) eff = base.pow(x)
                 return eff
             },
-            canAfford() {return player[this.layer].points.gte(this.cost())},
+            canAfford() {return player[this.layer].points.gte(this.cost())&&hasUpgrade(this.layer,35)},
             buy() {
                 if(!this.canAfford()) return
                 cost = tmp[this.layer].buyables[this.id].cost
@@ -279,13 +281,13 @@ addLayer("b", {
                 return consume
             },
             baseEffect() {
-                let base = new Decimal(0.2)
-                if(hasUpgrade("g",53)) base = base.add(0.1)
-                if(getBuyableAmount("r",11).gte(101)) base = base.add(tmp.r.bEnergyEff5)
+                let base = new Decimal(0.5)
+                if(hasUpgrade("g",53)) base = base.add(0.5)
+                if(getBuyableAmount("r",11).gte(121)) base = base.add(tmp.r.bEnergyEff5)
                 return base
             },
             effect(x) {
-                let eff = new Decimal(1)
+                let eff = new Decimal(0)
                 let base = this.baseEffect()
                 if(x.gt(0)) eff = eff.add(base.mul(x))
                 return eff
@@ -298,8 +300,8 @@ addLayer("b", {
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             display() {
-                let gainDesc = "+"+format(this.baseEffect())+" Green Light mult per level. This effect stacks additively.<br>"
-                let effText = "Currently: x"+format(this.effect())+"<br>"
+                let gainDesc = "+"+format(this.baseEffect())+" Green Light mult per level.<br>"
+                let effText = "Currently: +"+format(this.effect())+"<br>"
                 let boughtText = "("+formatWhole(getBuyableAmount(this.layer,this.id))+" purchased)<br><br>"
                 let costText = "Cost: "+formatWhole(this.cost())+" "+" Green Light"
                 return gainDesc+effText+boughtText+costText
@@ -348,7 +350,7 @@ addLayer("b", {
         23: {
             title: "Blue #B6",
             cost(x) {
-                let base = new Decimal(1e8)
+                let base = new Decimal(2e8)
                 let scale = [new Decimal(1.8)]
                 let scaledCost = [
                     base.mul(scale[0].pow(x.pow(1.02))),
@@ -416,7 +418,7 @@ addLayer("b", {
         },
         15: {
             title: "Blue #5",
-            description: "+1 BE gain, BE cap is doubled.",
+            description: "+1 BE mult, BE cap is doubled.",
             cost: new Decimal(40),
             unlocked() {return hasUpgrade("b",14)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
@@ -458,10 +460,10 @@ addLayer("b", {
         },
         31: {
             title: "Blue #11",
-            description: "Points affect Green Light gain at a reduced rate.",
-            cost: new Decimal(600),
+            description: "Points affect GL gain at a reduced rate.",
+            cost: new Decimal(750),
             effect() {
-                let eff = player.points.pow(0.2)
+                let eff = player.points.pow(0.2).mul(3)
                 return eff
             },
             effectDisplay() {return "+"+format(this.effect())},
@@ -470,35 +472,35 @@ addLayer("b", {
         },
         32: {
             title: "Blue #12",
-            description: "Green #4 effect is 3 times better.",
+            description: "Green #4 effect is 5 times better.",
             currencyDisplayName: "Green Light",
             currencyInternalName: "gl",
             currencyLayer: "g",
-            cost: new Decimal(5000),
+            cost: new Decimal(3000),
             unlocked() {return hasUpgrade("b",31)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         33: {
             title: "Blue #13",
-            description: "+20 points gain. Blue #B1 base +0.1.",
-            cost: new Decimal(625),
+            description: "+20 points and GL gain. Blue #B1 base +1.",
+            cost: new Decimal(850),
             unlocked() {return hasUpgrade("b",32)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         34: {
             title: "Blue #14",
-            description: "Gain 50% more Green Light, BE cap +20.",
+            description: "Gain 50% more Green Light and 100% more points, BE cap +20.",
             currencyDisplayName: "Green Light",
             currencyInternalName: "gl",
             currencyLayer: "g",
-            cost: new Decimal(5000),
+            cost: new Decimal(7500),
             unlocked() {return hasUpgrade("b",33)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         35: {
             title: "Blue #15",
             description: "Green Light affect both BE and BE cap with reduced effect.",
-            cost: new Decimal(680),
+            cost: new Decimal(1025),
             effect() {
                 let gl = hasMilestone("r",6)?player.g.bestgl:player.g.gl
                 let eff = [gl.pow(0.25).mul(1.5),gl.pow(0.5)]
@@ -514,70 +516,70 @@ addLayer("b", {
         41: {
             title: "Blue #16",
             description: "Disable the auto prestige but gain 100% of BE per second.",
-            cost: new Decimal(11000),
+            cost: new Decimal(35000),
             unlocked() {return hasMilestone("r",2)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         42: {
             title: "Blue #17",
             description: "+2,000 BE cap.",
-            cost: new Decimal(10000),
+            cost: new Decimal(28000),
             unlocked() {return hasUpgrade("b",41)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         43: {
             title: "Blue #18",
             description: "The first 3 buyables no longer costs anything.",
-            cost: new Decimal(12500),
+            cost: new Decimal(30000),
             unlocked() {return hasUpgrade("b",42)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         44: {
             title: "Blue #19",
             description: "+12,000 BE cap.",
-            cost: new Decimal(15000),
+            cost: new Decimal(36000),
             unlocked() {return hasUpgrade("b",43)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         45: {
             title: "Blue #20",
-            description: "+100,000 points gain.",
-            cost: new Decimal(30000),
+            description: "+500,000 points gain.",
+            cost: new Decimal(50000),
             unlocked() {return hasUpgrade("b",44)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         51: {
             title: "Blue #21",
-            description: "+100,000,000 points gain. +0.25 effective GE to GL.",
-            cost: new Decimal(7e5),
+            description: "+1e10 points gain. +0.5 effective GE to GL.",
+            cost: new Decimal(15e5),
             unlocked() {return hasMilestone("r",9)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         52: {
             title: "Blue #22",
-            description: "+100,000,000 points gain. +1e10 GL gain.",
-            cost: new Decimal(8e5),
+            description: "+1e10 points gain. +1e12 GL gain.",
+            cost: new Decimal(165e4),
             unlocked() {return hasMilestone("r",9)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         53: {
             title: "Blue #23",
-            description: "+100,000,000 points gain. +1 RE mult.",
-            cost: new Decimal(9e5),
+            description: "+1e10 points gain. +1 RE mult.",
+            cost: new Decimal(185e4),
             unlocked() {return hasMilestone("r",9)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         54: {
             title: "Blue #24",
-            description: "+100,000,000 points gain. +850 Blue #B2 base.",
-            cost: new Decimal(1e6),
+            description: "+1e10 points gain. +850 Blue #B2 base.",
+            cost: new Decimal(2e6),
             unlocked() {return hasMilestone("r",9)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
         55: {
             title: "Blue #25",
-            description: "+1e9 points gain. +1e11 GL gain, +100,000 BE cap and RE generates twice as fast.",
-            cost: new Decimal(1.3e6),
+            description: "+1e11 points gain. +1e13 GL gain, +100,000 BE cap and RE generates twice as fast.",
+            cost: new Decimal(235e4),
             unlocked() {return hasMilestone("r",9)&&!hideUpgs(this.layer,this.id)},
             style: {'touch-action':'manipulation'},
         },
